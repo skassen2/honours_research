@@ -21,14 +21,24 @@ def create_feature_subset(original_data_path, output_data_path, feature_selectio
     # Identify which columns to keep based on the dictionary
     selected_features = [feature for feature, keep in feature_selection.items() if keep == 1]
     
+    # --- Diagnostic check for missing features ---
+    all_df_columns = set(df.columns)
+    not_found_features = [feature for feature in selected_features if feature not in all_df_columns]
+
+    if not_found_features:
+        print("\n⚠️ Warning: The following selected features were not found in the dataset and will be ignored:")
+        for feature in not_found_features:
+            print(f"- '{feature}'")
+        print("Please check for typos or differences between the dictionary keys and the CSV column headers.")
+    # ----------------------------------------------------
+
     # --- Important: Ensure the target variable 'Dementia Status' is always included ---
     target_variable = 'Dementia Status'
-    if target_variable not in selected_features:
+    if target_variable not in selected_features and target_variable in df.columns:
         selected_features.append(target_variable)
-        print(f"Note: The target variable '{target_variable}' has been automatically included.")
+        print(f"\nNote: The target variable '{target_variable}' has been automatically included.")
 
     # Filter out any selected features that don't actually exist in the dataframe
-    # This prevents errors if the dictionary is from an older version of the data
     final_columns = [col for col in selected_features if col in df.columns]
     
     # Create the new dataframe with the selected columns
@@ -52,73 +62,86 @@ if __name__ == '__main__':
     output_file = 'input_data.csv'
 
     # --- Step 2: EDIT THIS DICTIONARY ---
-    # Change the value from 1 to 0 for any feature you want to REMOVE.
-    # Any feature with a 1 will be KEPT.
+    # This is the final, corrected dictionary based on the exact feature names from your file.
+    # 1 = KEEP the feature, 0 = REMOVE the feature.
     feature_selection = {
+        # --- Demographics & Socioeconomic (Non-Invasive) ---
         'Age at recruitment': 1,
-        'Year of birth': 0,
-        "Standard PRS for alzheimer's disease (AD)": 0,
-        'Townsend deprivation index at recruitment': 0,
-        'Number in household | Instance 0': 0,
-        'Has_Heart_attack': 0,
-        'Has_Angina': 0,
-        'Has_Stroke': 0,
-        'Has_High_blood_pressure': 0,
-        'Has_Any_Vascular_Heart_Problem': 0,
-        'Sleep duration | Instance 0': 0,
-        'Number of days/week of vigorous physical activity 10+ minutes | Instance 0': 0,
-        'Number of days/week of moderate physical activity 10+ minutes | Instance 0': 0,
-        'Mean time to correctly identify matches | Instance 0': 0,
-        'Fluid intelligence score | Instance 0': 0,
-        'Cholesterol | Instance 0': 0,
-        'Triglycerides | Instance 0': 0,
-        'C-reactive protein | Instance 0': 0,
-        'Glucose | Instance 0': 0,
-        'Glycated haemoglobin (HbA1c) | Instance 0': 0,
-        'Creatinine | Instance 0': 0,
-        'Computed_RSA_ln_ms2_Inst0': 0,
-        'Average_HR_bpm_Inst0': 0,
-        'Average_RR_ms_Inst0': 0,
-        'Pretest_RSA_ln_ms2_Inst0': 0,
-        'Activity_RSA_ln_ms2_Inst0': 0,
-        'Recovery_RSA_ln_ms2_Inst0': 0,
-        'Avg_HeartPeriod_ms_Inst0': 0,
-        'Dementia Status': 1, # keep this as 1
-        'Sex_Female': 0,
-        'Sex_Male': 0,
-        'Diabetes_Status_Do not know': 0,
-        'Diabetes_Status_No': 0,
-        'Diabetes_Status_Prefer not to answer': 0,
-        'Diabetes_Status_Yes': 0,
-        'Smoking status | Instance 0_Current': 0,
-        'Smoking status | Instance 0_Never': 0,
-        'Smoking status | Instance 0_Prefer not to answer': 0,
-        'Smoking status | Instance 0_Previous': 0,
-        'Alcohol drinker status | Instance 0_Current': 0,
-        'Alcohol drinker status | Instance 0_Never': 0,
-        'Alcohol drinker status | Instance 0_Prefer not to answer': 0,
-        'Alcohol drinker status | Instance 0_Previous': 0,
-        'Qualifications_A-levels/AS-levels or equivalent': 0,
-        'Qualifications_CSEs or equivalent': 0,
-        'Qualifications_College or University degree': 0,
-        'Qualifications_NVQ or HND or HNC or equivalent': 0,
-        'Qualifications_None of the above': 0,
-        'Qualifications_O-levels/GCSEs or equivalent': 0,
-        'Qualifications_Other professional qualifications eg: nursing, teaching': 0,
-        'Qualifications_Prefer not to answer': 0,
-        'Hearing_aid_user_No': 0,
-        'Hearing_aid_user_Prefer not to answer': 0,
-        'Hearing_aid_user_Yes': 0,
-        'Hearing_difficulty_No': 0,
-        'Hearing_difficulty_Prefer not to answer': 0,
-        'Hearing_difficulty_Yes': 0,
-        'Wears_glasses_or_contact_lenses_No': 0,
-        'Wears_glasses_or_contact_lenses_Prefer not to answer': 0,
-        'Wears_glasses_or_contact_lenses_Yes': 0,
-        'APOE4_carrier_status_Carrier': 0,
-        'APOE4_carrier_status_Non-carrier': 0,
-        'APOE4_carrier_status_Not available': 0,
-        'Systolic_blood_pressure': 0
+        'Year of birth': 1,
+        'Townsend deprivation index at recruitment': 1,
+        'Number in household | Instance 0': 1,
+        'Sex_Female': 1,
+        'Sex_Male': 1,
+
+        # --- Self-Reported Medical History (Non-Invasive) ---
+        'Has_Heart_attack': 1,
+        'Has_Angina': 1,
+        'Has_Stroke': 1,
+        'Has_High_blood_pressure': 1,
+        'Has_Any_Vascular_Heart_Problem': 1,
+        'Diabetes_Status_Do not know': 1,
+        'Diabetes_Status_No': 1,
+        'Diabetes_Status_Prefer not to answer': 1,
+        'Diabetes_Status_Yes': 1,
+        
+        # --- Lifestyle & Sensory (Non-Invasive) ---
+        'Sleep duration | Instance 0': 1,
+        'Number of days/week of vigorous physical activity 10+ minutes | Instance 0': 1,
+        'Number of days/week of moderate physical activity 10+ minutes | Instance 0': 1,
+        'Smoking status | Instance 0_Current': 1,
+        'Smoking status | Instance 0_Never': 1,
+        'Smoking status | Instance 0_Prefer not to answer': 1,
+        'Smoking status | Instance 0_Previous': 1,
+        'Alcohol drinker status | Instance 0_Current': 1,
+        'Alcohol drinker status | Instance 0_Never': 1,
+        'Alcohol drinker status | Instance 0_Prefer not to answer': 1,
+        'Alcohol drinker status | Instance 0_Previous': 1,
+        'Alcohol intake frequency. | Instance 0_Daily or almost daily': 1,
+        'Alcohol intake frequency. | Instance 0_Never': 1,
+        'Alcohol intake frequency. | Instance 0_Once or twice a week': 1,
+        'Alcohol intake frequency. | Instance 0_One to three times a month': 1,
+        'Alcohol intake frequency. | Instance 0_Prefer not to answer': 1,
+        'Alcohol intake frequency. | Instance 0_Special occasions only': 1,
+        'Alcohol intake frequency. | Instance 0_Three or four times a week': 1,
+        'Bipolar and major depression status | Instance 0_Bipolar I Disorder': 1,
+        'Bipolar and major depression status | Instance 0_Bipolar II Disorder': 1,
+        'Bipolar and major depression status | Instance 0_No Bipolar or Depression': 1,
+        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (moderate)': 1,
+        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (severe)': 1,
+        'Bipolar and major depression status | Instance 0_Single Probable major depression episode': 1,
+        'Probable recurrent major depression (moderate) | Instance 0_Yes': 1,
+        'Probable recurrent major depression (severe) | Instance 0_Yes': 1,
+        'Single episode of probable major depression | Instance 0_Yes': 1,
+        'Worrier / anxious feelings | Instance 0_Do not know': 1,
+        'Worrier / anxious feelings | Instance 0_No': 1,
+        'Worrier / anxious feelings | Instance 0_Prefer not to answer': 1,
+        'Worrier / anxious feelings | Instance 0_Yes': 1,
+
+        # --- Cognitive & Physical Measurements (Non-Invasive) ---
+        'Mean time to correctly identify matches | Instance 0': 1,
+        'Fluid intelligence score | Instance 0': 1,
+        'Computed_RSA_ln_ms2_Inst0': 1,
+        'Average_HR_bpm_Inst0': 1,
+        'Average_RR_ms_Inst0': 1,
+        'Pretest_RSA_ln_ms2_Inst0': 1,
+        'Activity_RSA_ln_ms2_Inst0': 1,
+        'Recovery_RSA_ln_ms2_Inst0': 1,
+        'Avg_HeartPeriod_ms_Inst0': 1,
+        'Hand grip strength | Instance 0': 1,
+        'Gate_speed_slow': 1,
+        # Note: 'Systolic_blood_pressure' was not in your final list, so it has been removed.
+
+        # --- Invasive Features (EXCLUDED) ---
+        "Standard PRS for alzheimer's disease (AD)": 0, # Genetic test
+        'Cholesterol | Instance 0': 0, # Blood test
+        'Triglycerides | Instance 0': 0, # Blood test
+        'C-reactive protein | Instance 0': 0, # Blood test
+        'Glucose | Instance 0': 0, # Blood test
+        'Glycated haemoglobin (HbA1c) | Instance 0': 0, # Blood test
+        'Creatinine | Instance 0': 0, # Blood test
+        
+        # --- Target Variable (Always Included) ---
+        'Dementia Status': 1
     }
 
     # --- Step 3: Run the function ---

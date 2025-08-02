@@ -59,7 +59,7 @@ def create_feature_subset(original_data_path, output_data_path, feature_selectio
 if __name__ == '__main__':
     # --- Step 1: Define your input and output file paths ---
     original_file = 'uk_biobank_dataset.csv'
-    output_file = 'input_moe_added.csv'
+    output_file = 'input_mop_original.csv'
 
     # --- Step 2: EDIT THIS DICTIONARY ---
     # This is the final, corrected dictionary based on the exact feature names from your file.
@@ -70,25 +70,25 @@ if __name__ == '__main__':
         'Year of birth': 1,
         'Townsend deprivation index at recruitment': 1,
         'Number in household | Instance 0': 0,
-        'Sex_Female': 0,
-        'Sex_Male': 1,
+        'Sex_Female': 1,
+        'Sex_Male': 0,
 
         # --- Self-Reported Medical History (Non-Invasive) --- CHECK
-        'Has_Heart_attack': 0,
+        'Has_Heart_attack': 1,
         'Has_Angina': 0,
-        'Has_Stroke': 0,
+        'Has_Stroke': 1,
         'Has_High_blood_pressure': 0,
-        'Has_Any_Vascular_Heart_Problem': 0,
+        'Has_Any_Vascular_Heart_Problem': 1,
         'Diabetes_Status_Do not know': 0,
-        'Diabetes_Status_No': 0,
+        'Diabetes_Status_No': 1,
         'Diabetes_Status_Prefer not to answer': 0,
-        'Diabetes_Status_Yes': 0,
+        'Diabetes_Status_Yes': 1,
         
         # --- Lifestyle & Sensory (Non-Invasive) ---
-        'Sleep duration | Instance 0': 0,
+        'Sleep duration | Instance 0': 1,
         'Number of days/week of vigorous physical activity 10+ minutes | Instance 0': 0,
         'Number of days/week of moderate physical activity 10+ minutes | Instance 0': 0,
-        'Smoking status | Instance 0_Current': 0,
+        'Smoking status | Instance 0_Current': 1,
         'Smoking status | Instance 0_Never': 0,
         'Smoking status | Instance 0_Prefer not to answer': 0,
         'Smoking status | Instance 0_Previous': 1,
@@ -97,29 +97,29 @@ if __name__ == '__main__':
         'Alcohol drinker status | Instance 0_Prefer not to answer': 0,
         'Alcohol drinker status | Instance 0_Previous': 1,
         'Alcohol intake frequency. | Instance 0_Daily or almost daily': 0,
-        'Alcohol intake frequency. | Instance 0_Never': 0,
-        'Alcohol intake frequency. | Instance 0_Once or twice a week': 0,
+        'Alcohol intake frequency. | Instance 0_Never': 1,
+        'Alcohol intake frequency. | Instance 0_Once or twice a week': 1,
         'Alcohol intake frequency. | Instance 0_One to three times a month': 1,
         'Alcohol intake frequency. | Instance 0_Prefer not to answer': 0,
-        'Alcohol intake frequency. | Instance 0_Special occasions only': 0,
-        'Alcohol intake frequency. | Instance 0_Three or four times a week': 0,
+        'Alcohol intake frequency. | Instance 0_Special occasions only': 1,
+        'Alcohol intake frequency. | Instance 0_Three or four times a week': 1,
         'Bipolar and major depression status | Instance 0_Bipolar I Disorder': 0,
         'Bipolar and major depression status | Instance 0_Bipolar II Disorder': 0,
         'Bipolar and major depression status | Instance 0_No Bipolar or Depression': 0,
-        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (moderate)': 1,
-        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (severe)': 1,
+        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (moderate)': 0,
+        'Bipolar and major depression status | Instance 0_Probable Recurrent major depression (severe)': 0,
         'Bipolar and major depression status | Instance 0_Single Probable major depression episode': 0,
         'Probable recurrent major depression (moderate) | Instance 0_Yes': 0,
         'Probable recurrent major depression (severe) | Instance 0_Yes': 0,
         'Single episode of probable major depression | Instance 0_Yes': 0,
         'Worrier / anxious feelings | Instance 0_Do not know': 0,
-        'Worrier / anxious feelings | Instance 0_No': 0,
+        'Worrier / anxious feelings | Instance 0_No': 1,
         'Worrier / anxious feelings | Instance 0_Prefer not to answer': 0,
-        'Worrier / anxious feelings | Instance 0_Yes': 0,
+        'Worrier / anxious feelings | Instance 0_Yes': 1,
 
         # --- Cognitive & Physical Measurements (Non-Invasive) --- #CHECK
-        'Mean time to correctly identify matches | Instance 0': 0,
-        'Fluid intelligence score | Instance 0': 0,
+        'Mean time to correctly identify matches | Instance 0': 1,
+        'Fluid intelligence score | Instance 0': 1,
         'Computed_RSA_ln_ms2_Inst0': 0,
         'Average_HR_bpm_Inst0': 0,
         'Average_RR_ms_Inst0': 0,

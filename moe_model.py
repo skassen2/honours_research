@@ -162,12 +162,6 @@ class MoE(nn.Module):
         expert_inputs = dispatcher.dispatch(x)
         expert_outputs = [self.experts[i](expert_inputs[i]) for i in range(self.num_experts) if expert_inputs[i].size(0) > 0]
         
-        # The combine function needs to handle cases where some experts get no input
-        # This requires a more complex handling than the original code might assume
-        # For simplicity, we'll filter the outputs, but a robust implementation
-        # would need to align outputs with the original gates.
-        # This implementation assumes the dispatcher and combine logic correctly handles empty inputs.
-        
         # Re-creating the expert_outputs list to ensure it matches the number of experts for the combine step
         all_expert_outputs = []
         expert_input_sizes = [e.size(0) for e in expert_inputs]

@@ -182,9 +182,6 @@ class MoPModel(nn.Module):
         self.output_layer = nn.Linear(self.config.intermediate_dim, self.config.output_dim)
         self.to(self.config.device)
 
-    # --- THIS IS THE FIX ---
-    # The 'enabled' flag is now dynamic. It will only be True if CUDA is available,
-    # preventing the warning when running on a CPU.
     @torch.autocast(device_type="cuda", dtype=torch.float16, enabled=torch.cuda.is_available())
     def forward(self, x: torch.Tensor):
         task_ids = torch.zeros(x.shape[0], x.shape[1], dtype=torch.long, device=self.device)

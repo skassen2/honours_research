@@ -2,6 +2,7 @@
 # Contains all class definitions for the Sparsely-Gated Mixture of Experts model.
 # This file can be imported into other scripts.
 
+import math
 import torch
 import torch.nn as nn
 from torch.distributions.normal import Normal
@@ -18,21 +19,15 @@ class SparseDispatcher(object):
         self._gates = gates
         self._num_experts = num_experts
         
-        # Sort experts
         sorted_experts, index_sorted_experts = torch.nonzero(gates).sort(0)
-        # Drop indices
         _, self._expert_index = sorted_experts.split(1, dim=1)
-        # Get according batch index for each expert
         self._batch_index = torch.nonzero(gates)[index_sorted_experts[:, 1], 0]
-        # Calculate num samples that each expert gets
         self._part_sizes = (gates > 0).sum(0).tolist()
-        # Expand gates to match with self._batch_index
         gates_exp = gates[self._batch_index.flatten()]
         self._nonzero_gates = torch.gather(gates_exp, 1, self._expert_index)
 
     def dispatch(self, inp):
         """Create one input Tensor for each expert."""
-        # Expand according to batch index so we can just split by _part_sizes
         inp_exp = inp[self._batch_index].squeeze(1)
         return torch.split(inp_exp, self._part_sizes, dim=0)
 
@@ -44,7 +39,6 @@ class SparseDispatcher(object):
             stitched = stitched.mul(self._nonzero_gates)
         
         zeros = torch.zeros(self._gates.size(0), expert_out[-1].size(1), requires_grad=True, device=stitched.device)
-        # Combine samples that have been processed by the same k experts
         combined = zeros.index_add(0, self._batch_index, stitched.float())
         return combined
 
@@ -59,15 +53,11 @@ class MLP(nn.Module):
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
-        self.soft = nn.Softmax(1)
 
     def forward(self, x):
         out = self.fc1(x)
         out = self.relu(out)
         out = self.fc2(out)
-        # Note: Softmax is applied here, which means the output is a probability distribution.
-        # Loss functions like CrossEntropyLoss typically expect raw logits.
-        out = self.soft(out)
         return out
 
 class MoE(nn.Module):
@@ -83,9 +73,9 @@ class MoE(nn.Module):
         self.hidden_size = hidden_size
         self.k = k
         
-        # Instantiate experts
         self.experts = nn.ModuleList([MLP(self.input_size, self.output_size, self.hidden_size) for i in range(self.num_experts)])
-        self.w_gate = nn.Parameter(torch.zeros(input_size, num_experts), requires_grad=True)
+        self.w_gate = nn.Parameter(torch.empty(input_size, num_experts), requires_grad=True)
+        nn.init.kaiming_uniform_(self.w_gate, a=math.sqrt(5))
         self.w_noise = nn.Parameter(torch.zeros(input_size, num_experts), requires_grad=True)
 
         self.softplus = nn.Softplus()
@@ -149,20 +139,27 @@ class MoE(nn.Module):
             load = self._gates_to_load(gates)
         return gates, load
 
-    def forward(self, x, loss_coef=1e-2):
+    def forward(self, x, loss_coef=1.0):
         """Forward pass for the MoE layer."""
-        gates, load = self.noisy_top_k_gating(x, self.training)
-        
-        # Calculate importance loss
-        importance = gates.sum(0)
-        loss = self.cv_squared(importance) + self.cv_squared(load)
-        loss *= loss_coef
+        # The 'gates' tensor returned here is for dispatching, but its gradient path is broken.
+        gates, _ = self.noisy_top_k_gating(x, self.training)
 
+        # 1. Get the soft probabilities from the gating network.
+        clean_logits = x @ self.w_gate
+        soft_gates = self.softmax(clean_logits)
+
+        # 2. Calculate 'importance' as the sum of probabilities for each expert.
+        importance = soft_gates.sum(0)
+
+        # 3. Base the ENTIRE balancing loss on this differentiable 'importance' value.
+        loss = self.cv_squared(importance)
+        loss *= loss_coef
+        
+        # The rest of the function (dispatching and combining) uses the original 'hard' top-k gates
         dispatcher = SparseDispatcher(self.num_experts, gates)
         expert_inputs = dispatcher.dispatch(x)
         expert_outputs = [self.experts[i](expert_inputs[i]) for i in range(self.num_experts) if expert_inputs[i].size(0) > 0]
         
-        # Re-creating the expert_outputs list to ensure it matches the number of experts for the combine step
         all_expert_outputs = []
         expert_input_sizes = [e.size(0) for e in expert_inputs]
         output_idx = 0
@@ -171,7 +168,6 @@ class MoE(nn.Module):
                 all_expert_outputs.append(expert_outputs[output_idx])
                 output_idx += 1
             else:
-                # Create a zero tensor for experts that received no input
                 all_expert_outputs.append(torch.zeros(0, self.output_size, device=x.device))
         
         y = dispatcher.combine(all_expert_outputs)
